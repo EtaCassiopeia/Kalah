@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import play.libs.F.Either;
 import play.mvc.*;
 import scala.compat.java8.FutureConverters;
+import securesocial.core.RuntimeEnvironment;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -31,14 +32,16 @@ public class WebSocketController extends Controller {
     private final ActorRef userParentActor;
     private final Materializer materializer;
     private final ActorSystem actorSystem;
+    private RuntimeEnvironment env;
 
     @Inject
-    public WebSocketController(ActorSystem actorSystem,
+    public WebSocketController(RuntimeEnvironment env, ActorSystem actorSystem,
                                Materializer materializer,
                                @Named("supervisorActor") ActorRef userParentActor) {
         this.userParentActor = userParentActor;
         this.materializer = materializer;
         this.actorSystem = actorSystem;
+        this.env = env;
     }
 
     public WebSocket ws(String playerName) {

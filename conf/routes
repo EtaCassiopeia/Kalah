@@ -11,3 +11,4 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 # WebSocket
 GET         /ws/player/:playerName                    controllers.WebSocketController.ws(playerName: String)
 
+-> 		/auth securesocial.Routes

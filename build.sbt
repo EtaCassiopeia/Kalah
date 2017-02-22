@@ -6,7 +6,7 @@ lazy val `kalah` = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.8"
 
-val akkaVersion = "2.4.11"
+val akkaVersion = "2.4.14"
 
 libraryDependencies ++= Seq(
   jdbc,
@@ -19,11 +19,14 @@ libraryDependencies ++= Seq(
   "dom4j" % "dom4j" % "1.6.1",
   "de.grundid.opendatalab" % "geojson-jackson" % "1.1",
   "org.hamcrest" % "hamcrest-all" % "1.3" % "test",
-  "org.mockito" %  "mockito-all" % "1.9.5" % "test"
+  "org.mockito" % "mockito-all" % "1.9.5" % "test",
+  "ws.securesocial" %% "securesocial" % "master-SNAPSHOT"
 )
 
 unmanagedResourceDirectories in Test <+= baseDirectory(_ / "target/web/public/test")
 
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
+
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
 
