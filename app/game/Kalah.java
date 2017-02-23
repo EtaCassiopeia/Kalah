@@ -1,13 +1,14 @@
 package game;
 
 import com.google.common.annotations.VisibleForTesting;
+import protocol.ConnectionProtocol;
 import protocol.SerializableCollection;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static protocol.ConnectionProtocol.PlayerBoardState;
+import static protocol.ConnectionProtocol.*;
 
 public class Kalah {
     public static final int STONES_PER_PIT = 6;
@@ -16,7 +17,7 @@ public class Kalah {
     private final String player1;
     private final String player2;
 
-    private final Consumer<List<PlayerBoardState>> onMoveCompleted;
+    private final Consumer<GameBoardState> onMoveCompleted;
     private final BiConsumer<String, Integer> onGameFinished;
 
     private Turn turn;
@@ -26,7 +27,7 @@ public class Kalah {
 
     public Kalah(String player1,
                  String player2,
-                 Consumer<List<PlayerBoardState>> onMoveCompleted,
+                 Consumer<GameBoardState> onMoveCompleted,
                  BiConsumer<String, Integer> onGameFinished) {
 
         this.player1 = player1;
@@ -114,6 +115,7 @@ public class Kalah {
         this.turn = turn;
     }
 
+    @SuppressWarnings("unchecked")
     private abstract class Turn {
 
         private final String player;
@@ -128,7 +130,10 @@ public class Kalah {
                 int normalizedIndex = normalize(byPlayer, startPit);
                 if (isPitIndexInMyRange(normalizedIndex)) {
                     sowStones(normalizedIndex);
-                    onMoveCompleted.accept(Arrays.asList(getState()));
+                    SerializableCollection<PlayerBoardState> states =
+                            new SerializableCollection(Arrays.asList(getState()));
+
+                    onMoveCompleted.accept(new GameBoardState(states));
                     if (isGameFinished()) {
                         int stonesInPlayer1House = board.get(stateCache.get(player1).getMyHouseIndex());
                         int stonesInPlayer2House = board.get(stateCache.get(player2).getMyHouseIndex());

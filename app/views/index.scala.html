@@ -1,7 +1,271 @@
-@(message: String)
+@(user: service.User, env: securesocial.core.RuntimeEnvironment)
+@import securesocial.core.IdentityProvider
+@import securesocial.core.AuthenticationMethod._
 
-@main("Welcome to Play") {
+@main("Backbase - Kalah") {
 
-    @play20.welcome(message)
+    <script type="text/javascript">
+            var webSocket = new WebSocket('ws://localhost:9000/ws/player/' + @user.main.userId);
 
+            $(function () {
+                $(".container-fluid").hide();
+
+                $('.list-group').on('click', 'a', function () {
+                    sendGameRequest($(this).text());
+                });
+
+                $('.pit').on('click', function () {
+
+                    var value = $(this).children("span:first").text();
+
+                    if (value != 0) {
+                        var id = $(this).attr('id');
+                        var pitIndex = id.substr(id.length - 1);
+                        sendMoveCommand(pitIndex);
+                    }
+                });
+            });
+
+            webSocket.onerror = function (event) {
+                onError(event)
+            };
+
+            webSocket.onopen = function (event) {
+                onOpen(event)
+            };
+
+            webSocket.onmessage = function (event) {
+                onMessage(event)
+            };
+
+            function onMessage(event) {
+                var obj = jQuery.parseJSON(event.data);
+                if (obj.type === "collection") {
+                    $(".list-group").empty();
+                    $(".list-group").append('<a href="#" class="list-group-item disabled">Online Players</a>');
+
+                    jQuery.each(obj.items, function (i, val) {
+                        var r = $('<a href="#" class="list-group-item">' + val + '</a>');
+                        $(".list-group").append(r);
+                    });
+                } else if (obj.type === "game-started") {
+                    $(".list-group").hide();
+                    $(".container-fluid").show();
+
+                    if (obj.player1 == @user.main.userId) {
+                        $('#opponent-label').text(obj.player2 + '(opponent)');
+                        enableMyPits();
+                    } else {
+                        $('#opponent-label').text(obj.player1 + '(opponent)');
+                    }
+                } else if (obj.type === "want-to-play") {
+                    var r = confirm("Do you want to play with " + obj.opponentPlayer);
+                    if (r == true) {
+                        sendGameRequestResponse(obj.opponentPlayer, "ACCEPT");
+                    } else {
+                        sendGameRequestResponse(obj.opponentPlayer, "DECLINE");
+                    }
+                } else if (obj.type === "game-board-state") {
+                    jQuery.each(obj.playerBoards.items, function (i, state) {
+                        updatePlayerBoardState(state);
+                    });
+                } else if (obj.type === "game-finished") {
+                    $(".container-fluid").hide();
+                    alert('Game has been finished! Our winner is ' + obj.winner + ' with ' + obj.stones);
+                }
+            }
+
+            function onOpen(event) {
+                document.getElementById('messages').innerHTML = 'Now Connection established';
+            }
+
+            function onError(event) {
+                alert(event.data);
+            }
+
+            function sendGameRequest(player) {
+                var message = '{"type":"game-request", "opponent-player": "' + player + '"}';
+                webSocket.send(message);
+            }
+
+            function sendGameRequestResponse(player, answer) {
+                var message = '{"type":"want-to-play-response", "current-player" : "' + @user.main.userId +'" , "opponentPlayer":"' + player + '" , "response": "' + answer + '"}';
+                webSocket.send(message);
+            }
+
+            function sendMoveCommand(startPitIndex) {
+                var message = '{"type":"move", "player" : "' + @user.main.userId +'" , "pit-index":"' + startPitIndex + '" }';
+                webSocket.send(message);
+            }
+
+            function disableMyPits() {
+                for (i = 1; i <= 6; i++) {
+                    $('#m-pit-' + i).addClass("disabled");
+                }
+            }
+
+            function enableMyPits() {
+                for (i = 1; i <= 6; i++) {
+                    $('#m-pit-' + i).removeClass("disabled");
+                }
+            }
+
+            function updatePlayerBoardState(state) {
+                if (state.player == @user.main.userId) {
+                    jQuery.each(state.pits.items, function (i, pit) {
+                        $('#m-pit-' + (i + 1) + ' > .badge').text(pit);
+                    });
+
+                    $('#my-home').text(state.stonesInHome);
+
+                    if (state.whoseTurn == @user.main.userId) {
+                        enableMyPits();
+                    } else {
+                        disableMyPits();
+                    }
+                } else {
+                    jQuery.each(state.pits.items, function (i, pit) {
+                        var selector = '#o-pit-' + (i + 1) + ' > .badge';
+                        $(selector).text(pit);
+                    });
+
+                    $('#opponent-home').text(state.stonesInHome);
+                }
+            }
+
+    </script>
+
+    <div class="page-header">
+        <h2><img src="@user.main.avatarUrl" alt="@user.main.fullName" width="40px" height="40px"/>
+            Welcome @user.main.firstName</h2>
+    </div>
+
+    <div class="clearfix">
+        <h3>User Details</h3>
+
+        <ul>
+            <li>User Id: @user.main.userId</li>
+            <li>Fist name: @user.main.firstName</li>
+            <li>Last name: @user.main.lastName</li>
+            <li>Full name: @user.main.fullName</li>
+        </ul>
+
+        <hr>
+    </div>
+
+    <div id="dialog" title="Game request"/>
+
+    <div id="players"/>
+
+    <div class="list-group">
+        <a href="#" class="list-group-item disabled">
+            Online Players
+        </a>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row text-center">
+            <div class="col-md-12">
+                <span id="opponent-label" class="label label-success">Player2</span>
+                <hr>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-2 jumbotron">
+                        <span id="opponent-home" class="label label-default">0</span>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="row opponent-pits">
+                                    <div class="col-md-2">
+                                        <button id="o-pit-6" class="btn btn-primary disabled" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="o-pit-5" class="btn btn-primary disabled" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="o-pit-4" class="btn btn-primary disabled" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="o-pit-3" class="btn btn-primary disabled" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="o-pit-2" class="btn btn-primary disabled" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="o-pit-1" class="btn btn-primary disabled" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <hr>
+                            </div>
+                        </div>
+                        <div class="row my-pits">
+                            <div class="col-md-12">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <button id="m-pit-1" class="btn btn-info disabled pit" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="m-pit-2" class="btn btn-info disabled pit" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="m-pit-3" class="btn btn-info disabled pit" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="m-pit-4" class="btn btn-info disabled pit" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="m-pit-5" class="btn btn-info disabled pit" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button id="m-pit-6" class="btn btn-info disabled pit" type="button">
+                                            <span class="badge">6</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 jumbotron">
+                        <span id="my-home" class="label label-default">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row text-center">
+            <div class="col-md-12">
+                <hr>
+                <span id="my-label" class="label label-danger">@user.main.userId (me)</span>
+            </div>
+        </div>
+    </div>
 }

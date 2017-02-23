@@ -2,16 +2,28 @@ package controllers;
 
 import play.mvc.Controller;
 import play.mvc.Result;
+import securesocial.core.RuntimeEnvironment;
+import securesocial.core.java.SecureSocial;
 import securesocial.core.java.SecuredAction;
+import service.User;
 import views.html.index;
+import com.google.inject.Inject;
 
 import javax.inject.Singleton;
 
 @Singleton
 public class Application extends Controller{
 
+    private RuntimeEnvironment env;
+
+    @Inject()
+    public Application (RuntimeEnvironment env) {
+        this.env = env;
+    }
+
     @SecuredAction
     public Result index() {
-        return ok(index.render("Your new application is ready."));
+        User user = (User) ctx().args.get(SecureSocial.USER_KEY);
+        return ok(index.render(user, SecureSocial.env()));
     }
 }

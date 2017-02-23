@@ -8,12 +8,10 @@ import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.collect.Lists;
 import play.libs.akka.InjectedActorSupport;
+import scala.collection.immutable.Iterable;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static protocol.ConnectionProtocol.*;
@@ -41,26 +39,24 @@ public class SupervisorActor extends AbstractActor implements InjectedActorSuppo
 
         receive(ReceiveBuilder
                 .match(Create.class, s -> {
-                    ActorRef child = injectedChild(() -> childFactory.create(s.id, s.out), s.id);
+                    ActorRef child = injectedChild(() -> this.childFactory.create(s.id, s.out), s.id);
                     sender().tell(child, self());
+
+                    Players players = getPlayers();
+                    getContext().getChildren().forEach(r -> r.tell(players, self()));
                 })
-                .match(GetPlayers.class, s -> {
-                    sender().tell(
-                            new Players(
-                                    Lists.newArrayList(getContext().getChildren())
-                                            .stream()
-                                            .map(a -> a.path().name())
-                                            .collect(Collectors.toList())),
-                            self());
-                })
+                .match(GetPlayers.class, s -> sender().tell(getPlayers(), self()))
                 .match(CreateGame.class, s -> {
                     //TODO check valid player names
                     ActorRef opponent = getContext().getChild(s.getOpponentPlayer());
                     opponent.tell(new AreYouWantToPlayWith(s.currentPlayer), self());
                 })
                 .match(AreYouWantToPlayWithResponse.class, s -> {
-                    ActorRef player1 = getContext().getChild(s.getCurrentPlayer());
-                    ActorRef player2 = getContext().getChild(s.getOpponentPlayer());
+                    String player1Name=s.getCurrentPlayer();
+                    String player2Name=s.getOpponentPlayer();
+
+                    ActorRef player1 = getContext().getChild(player1Name);
+                    ActorRef player2 = getContext().getChild(player2Name);
                     if (null == player1 || null == player2) {
                         //TODO check players
                         //TODO send error message
@@ -70,13 +66,21 @@ public class SupervisorActor extends AbstractActor implements InjectedActorSuppo
                             ActorRef actorRef = getContext().actorOf(Props.create(GameBoardActor.class, player1, player2), gameId);
                             activeGames.put(gameId, actorRef);
 
-                            player1.tell(new GameStarted(gameId), actorRef );
-                            player2.tell(new GameStarted(gameId), actorRef);
+                            player1.tell(new GameStarted(gameId,player1Name,player2Name), actorRef);
+                            player2.tell(new GameStarted(gameId,player1Name,player2Name), actorRef);
 
                         }
                     }
                 })
                 .build());
+    }
+
+    private Players getPlayers() {
+        return new Players(
+                Lists.newArrayList(getContext().getChildren())
+                        .stream()
+                        .map(a -> a.path().name())
+                        .collect(Collectors.toList()));
     }
 
     public static class GetPlayers {

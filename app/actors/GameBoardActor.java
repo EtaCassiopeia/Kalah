@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static protocol.ConnectionProtocol.Move;
-import static protocol.ConnectionProtocol.Won;
+import static protocol.ConnectionProtocol.GameFinished;
 
 public class GameBoardActor extends AbstractActor {
 
@@ -32,10 +32,10 @@ public class GameBoardActor extends AbstractActor {
         game = new Kalah(
                 player1Name,
                 player2Name,
-                (states) -> states.forEach(state -> actorRefMap.get(state.getPlayer()).tell(state, self())),
+                (states) -> actorRefMap.forEach((p, ref) -> ref.tell(states, self())),
                 (winner, stones) -> {
-                    Won wonMessage = new Won(winner, stones);
-                    actorRefMap.forEach((actorName, actorRef) -> actorRef.tell(wonMessage, self()));
+                    GameFinished gameFinishedMessage = new GameFinished(winner, stones);
+                    actorRefMap.forEach((actorName, actorRef) -> actorRef.tell(gameFinishedMessage, self()));
                 }
         );
 

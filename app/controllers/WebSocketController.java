@@ -29,7 +29,7 @@ public class WebSocketController extends Controller {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketController.class);
 
-    private final ActorRef userParentActor;
+    private final ActorRef supervisorActor;
     private final Materializer materializer;
     private final ActorSystem actorSystem;
     private RuntimeEnvironment env;
@@ -37,8 +37,8 @@ public class WebSocketController extends Controller {
     @Inject
     public WebSocketController(RuntimeEnvironment env, ActorSystem actorSystem,
                                Materializer materializer,
-                               @Named("supervisorActor") ActorRef userParentActor) {
-        this.userParentActor = userParentActor;
+                               @Named("supervisorActor") ActorRef supervisorActor) {
+        this.supervisorActor = supervisorActor;
         this.materializer = materializer;
         this.actorSystem = actorSystem;
         this.env = env;
@@ -46,7 +46,7 @@ public class WebSocketController extends Controller {
 
     public WebSocket ws(String playerName) {
         return WebSocket.Json.acceptOrResult(request -> {
-            final CompletionStage<Flow<JsonNode, JsonNode, NotUsed>> future = wsFuture(request, "player-" + playerName);
+            final CompletionStage<Flow<JsonNode, JsonNode, NotUsed>> future = wsFuture(request, playerName);
             final CompletionStage<Either<Result, Flow<JsonNode, JsonNode, ?>>> stage = future.thenApplyAsync(Either::Right);
             return stage.exceptionally(this::logException);
         });
@@ -74,7 +74,7 @@ public class WebSocketController extends Controller {
     public CompletionStage<ActorRef> createUserActor(String id, ActorRef webSocketOut) {
         long timeoutMillis = 100L;
         return FutureConverters.toJava(
-                ask(userParentActor, new SupervisorActor.Create(id, webSocketOut), timeoutMillis)
+                ask(supervisorActor, new SupervisorActor.Create(id, webSocketOut), timeoutMillis)
         ).thenApply(stageObj -> (ActorRef) stageObj);
     }
 
@@ -83,8 +83,7 @@ public class WebSocketController extends Controller {
 
         final Sink<JsonNode, Publisher<JsonNode>> sink = Sink.asPublisher(AsPublisher.WITHOUT_FANOUT);
 
-        final Pair<ActorRef, Publisher<JsonNode>> pair = source.toMat(sink, Keep.both()).run(materializer);
-        return pair;
+        return source.toMat(sink, Keep.both()).run(materializer);
     }
 
     public Flow<JsonNode, JsonNode, NotUsed> createWebSocketFlow(Publisher<JsonNode> webSocketIn, ActorRef userActor) {

@@ -14,7 +14,8 @@ public class ConnectionProtocol {
             @JsonSubTypes.Type(value = GameStarted.class, name = "game-started"),
             @JsonSubTypes.Type(value = Move.class, name = "move"),
             @JsonSubTypes.Type(value = PlayerBoardState.class, name = "player-board-state"),
-            @JsonSubTypes.Type(value = Won.class, name = "won"),
+            @JsonSubTypes.Type(value = GameBoardState.class, name = "game-board-state"),
+            @JsonSubTypes.Type(value = GameFinished.class, name = "game-finished")
     })
     public static abstract class SerializableJsonObject {
     }
@@ -99,14 +100,28 @@ public class ConnectionProtocol {
 
     public static class GameStarted extends SerializableJsonObject {
         private final String gameId;
+        private final String player1;
+        private final String player2;
 
         @JsonCreator
-        public GameStarted(@JsonProperty("game-id") String gameId) {
+        public GameStarted(@JsonProperty("game-id") String gameId,
+                           @JsonProperty("player1") String player1,
+                           @JsonProperty("player2") String player2) {
             this.gameId = gameId;
+            this.player1 = player1;
+            this.player2 = player2;
         }
 
         public String getGameId() {
             return gameId;
+        }
+
+        public String getPlayer1() {
+            return player1;
+        }
+
+        public String getPlayer2() {
+            return player2;
         }
     }
 
@@ -125,6 +140,18 @@ public class ConnectionProtocol {
 
         public Integer getStartPitIndex() {
             return startPitIndex;
+        }
+    }
+
+    public static class GameBoardState extends SerializableJsonObject {
+        private final SerializableCollection<PlayerBoardState> playerBoards;
+
+        public GameBoardState(@JsonProperty("states") SerializableCollection<PlayerBoardState> playerBoards) {
+            this.playerBoards = playerBoards;
+        }
+
+        public SerializableCollection<PlayerBoardState> getPlayerBoards() {
+            return playerBoards;
         }
     }
 
@@ -172,17 +199,17 @@ public class ConnectionProtocol {
         }
     }
 
-    public static class Won extends SerializableJsonObject {
-        private String player;
+    public static class GameFinished extends SerializableJsonObject {
+        private String winner;
         private Integer stones;
 
-        public Won(@JsonProperty("player") String player, @JsonProperty("stones") Integer stones) {
-            this.player = player;
+        public GameFinished(@JsonProperty("winner") String winner, @JsonProperty("stones") Integer stones) {
+            this.winner = winner;
             this.stones = stones;
         }
 
-        public String getPlayer() {
-            return player;
+        public String getWinner() {
+            return winner;
         }
 
         public Integer getStones() {

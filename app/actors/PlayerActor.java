@@ -24,7 +24,6 @@ public class PlayerActor extends AbstractActor {
 
     private Configuration configuration;
 
-    private String currentGameId;
     private Optional<ActorRef> gameActorRef;
 
     @SuppressWarnings("unchecked")
@@ -63,12 +62,11 @@ public class PlayerActor extends AbstractActor {
                 })
                 .match(AreYouWantToPlayWith.class, x -> out.tell(Json.toJson(x), self()))
                 .match(GameStarted.class, x -> {
-                    currentGameId = x.getGameId();
                     gameActorRef = Optional.of(sender());
                     out.tell(Json.toJson(x), self());
                 })
-                .match(PlayerBoardState.class, x -> out.tell(Json.toJson(x), self()))
-                .match(Won.class, x -> out.tell(Json.toJson(x), self()))
+                .match(GameBoardState.class, x -> out.tell(Json.toJson(x), self()))
+                .match(GameFinished.class, x -> out.tell(Json.toJson(x), self()))
                 .matchAny(o -> log.info("received unknown message"))
                 .build());
     }
