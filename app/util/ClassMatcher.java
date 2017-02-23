@@ -3,6 +3,10 @@ package util;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+/**
+ * ClassMatcher is a fancy wrapper for <code>if(obj instanceof Class) {}</code> mechanism.
+ * It prevents boilerplate nested <code>if</code> statements.
+ */
 public class ClassMatcher {
 
     private final BiFunction<Object, Consumer<Object>, Boolean> binder;

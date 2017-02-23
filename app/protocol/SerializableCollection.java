@@ -8,6 +8,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * SerializableCollection class is a serializable wrapper for any kind of collections
+ * @param <T>
+ */
 public class SerializableCollection <T> extends ConnectionProtocol.SerializableJsonObject implements Iterable<T> {
 
     private List<T> items = new ArrayList<>();

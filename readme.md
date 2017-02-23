@@ -1,3 +1,16 @@
+Kalah (Mancala)
+=================================
+
+This is a simple web application to let players play an online Kalah game with each other.
+
+## How to Setup and Play?  
+From the project folder run bellow command to download all the required dependencies and run the project:
+    ```
+    ./activator run
+    ```
+After everything is done, open a browser and browse <a href="http://localhost:9000">http://localhost:9000</a>. You can use an another browser to represent 
+a different user or use the <a href="https://github.com/cyberixae/dwst">Dark WebSocket Terminal</a> as a separate WebSocket client to send raw WebSocket commands.      
+    
 # Sample WebSocket Requests
 
 ## connect

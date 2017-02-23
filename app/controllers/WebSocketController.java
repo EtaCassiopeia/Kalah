@@ -24,6 +24,10 @@ import java.util.concurrent.CompletionStage;
 
 import static akka.pattern.Patterns.ask;
 
+/**
+ * WebSocketController class is responsible for creating a WebSocket connection for each player.
+ * It will ask the {@see actors.SupervisorActor} to create a new child actor per player.
+ */
 @Singleton
 public class WebSocketController extends Controller {
 

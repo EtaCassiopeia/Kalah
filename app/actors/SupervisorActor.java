@@ -16,6 +16,11 @@ import java.util.stream.Collectors;
 
 import static protocol.ConnectionProtocol.*;
 
+/***
+ * SupervisorActor class controls actor creation process. This game creates a separate actor per player.
+ * SupervisorActor is responsible for managing the lifecycle of child actors and also plays a vital role in dispatching
+ * messages between player actors.
+ */
 public class SupervisorActor extends AbstractActor implements InjectedActorSupport {
 
     private LoggingAdapter logger = Logging.getLogger(getContext().system(), this);
@@ -75,6 +80,11 @@ public class SupervisorActor extends AbstractActor implements InjectedActorSuppo
                 .build());
     }
 
+    /**
+     * This method returns current online players.
+     * Each player is represented as an actor. Therefore, Any child of SupervisorActor is considered as an online player
+     * @return online players of the system
+     */
     private Players getPlayers() {
         return new Players(
                 Lists.newArrayList(getContext().getChildren())
@@ -83,9 +93,15 @@ public class SupervisorActor extends AbstractActor implements InjectedActorSuppo
                         .collect(Collectors.toList()));
     }
 
+    /**
+     * GetPlayers will be used as an inline message template to request current online users
+     */
     public static class GetPlayers {
     }
 
+    /**
+     * Players is a wrapper class. It is used as a response to the {@see GetPlayers} request
+     */
     public static class Players {
         private List<String> players;
 
@@ -98,6 +114,9 @@ public class SupervisorActor extends AbstractActor implements InjectedActorSuppo
         }
     }
 
+    /**
+     * CreateGame is an inline class to make a request to creating a game between two online players
+     */
     public static class CreateGame {
         private String currentPlayer;
         private String opponentPlayer;

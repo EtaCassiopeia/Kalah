@@ -2,6 +2,9 @@ package protocol;
 
 import com.fasterxml.jackson.annotation.*;
 
+/**
+ * ConnectionProtocol class contains message types used to communicating between WebSocket server and clients.
+ */
 public class ConnectionProtocol {
 
     @JsonTypeInfo(include = JsonTypeInfo.As.PROPERTY, use = JsonTypeInfo.Id.NAME, property = "type")

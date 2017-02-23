@@ -1,14 +1,11 @@
 package game;
 
 import org.junit.Test;
+import protocol.ConnectionProtocol;
 
 import java.util.Arrays;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class KalahTest {
     @Test
@@ -69,7 +66,14 @@ public class KalahTest {
             kalah.move(m.player, m.startPitIndex);
         });
 
+        ConnectionProtocol.PlayerBoardState[] boardStates = kalah.getState();
+
+        assertEquals(boardStates[0].getStonesInHome().intValue(), 23);
+        assertEquals(boardStates[1].getStonesInHome().intValue(), 44);
+
     }
+
+    //TODO: Add more test cases
 
     private class Movement {
         private String player;

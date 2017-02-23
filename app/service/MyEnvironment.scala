@@ -10,6 +10,10 @@ import securesocial.core.services.UserService
 
 import scala.collection.immutable.ListMap
 
+/**
+  * MyEnvironment is part of OAuth2 authentication process and has been borrowed
+  * from {@see <a href="http://www.securesocial.ws/">securesocial</a>} project.
+  */
 @Singleton
 class MyEnvironment @Inject()(override val configuration: Configuration, override val messagesApi: MessagesApi) extends RuntimeEnvironment.Default {
   type U = User

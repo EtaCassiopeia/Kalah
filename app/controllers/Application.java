@@ -11,6 +11,9 @@ import com.google.inject.Inject;
 
 import javax.inject.Singleton;
 
+/**
+ * Application class is the entry point of the web application
+ */
 @Singleton
 public class Application extends Controller{
 

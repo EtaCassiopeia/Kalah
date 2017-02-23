@@ -13,6 +13,11 @@ import java.util.Map;
 import static protocol.ConnectionProtocol.Move;
 import static protocol.ConnectionProtocol.GameFinished;
 
+/**
+ * GameBoardActor will be created for each confirmed play request between two players.
+ * It creates an instance of {@see game.Kalah} class and performs player movement requests by
+ * calling the {@see game.Kalah#move(Strin, String)} method.
+ */
 public class GameBoardActor extends AbstractActor {
 
     private LoggingAdapter logger = Logging.getLogger(getContext().system(), this);

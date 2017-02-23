@@ -14,6 +14,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * MyUserService is part of OAuth2 authentication process and has been borrowed
+ * from {@see <a href="http://www.securesocial.ws/">securesocial</a>} project.
+ */
 public class MyUserService extends BaseUserService<User> {
     private static Logger logger = LoggerFactory.getLogger("userservice");
     private HashMap<String, User> users = new HashMap<String, User>();

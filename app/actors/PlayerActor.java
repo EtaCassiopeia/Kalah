@@ -19,6 +19,10 @@ import java.util.stream.Collectors;
 import static protocol.ConnectionProtocol.*;
 import static util.ClassMatcher.match;
 
+/**
+ * PlayerActor class will be used to represent an online player. each player in the system has its own actor
+ * and this actor is responsible for performing player's requests and delivering responses straight to the player.
+ */
 public class PlayerActor extends AbstractActor {
     private final LoggingAdapter log = Logging.getLogger(context().system(), this);
 

@@ -1,18 +1,25 @@
 package game;
 
 import com.google.common.annotations.VisibleForTesting;
-import protocol.ConnectionProtocol;
 import protocol.SerializableCollection;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static protocol.ConnectionProtocol.*;
+import static protocol.ConnectionProtocol.GameBoardState;
+import static protocol.ConnectionProtocol.PlayerBoardState;
+import static util.Util.compareLists;
 
+/**
+ * Kalah is a basic implementation of {@see <a href="https://en.wikipedia.org/wiki/Kalah">Kalah</a>},
+ * also called Kalaha or Mancala.
+ * This class handles all of the movements and user turns. It will be used inside an {@link akka.actor.AbstractActor}.
+ * As a result, State transition will be done locally without any need of synchronization.
+ */
 public class Kalah {
-    public static final int STONES_PER_PIT = 6;
-    public static final int PITS_NUMBER_PER_PLAYER = 6;
+    private static final int STONES_PER_PIT = 6;
+    private static final int PITS_NUMBER_PER_PLAYER = 6;
 
     private final String player1;
     private final String player2;
@@ -55,16 +62,29 @@ public class Kalah {
         board.add(0); //Player2 home
     }
 
+    /**
+     * This method checks if the game is finished.
+     * The game is over as soon as one of the sides run out of stones.
+     * @return Returns <code>true</code> if game is completed
+     */
     private boolean isGameFinished() {
         return player1Pits().stream().allMatch(i -> i == 0) ||
                 player2Pits().stream().allMatch(i -> i == 0);
     }
 
+    /**
+     * This method checks if the game is in a running state or initialization phase
+     * @return Returns <code>true</code> if game is started
+     */
     private boolean isGameStarted() {
         return !(player1Pits().stream().allMatch(i -> i == STONES_PER_PIT) &&
                 player2Pits().stream().allMatch(i -> i == STONES_PER_PIT));
     }
 
+    /**
+     * This method exposes current game board state
+     * @return Return game board status
+     */
     public PlayerBoardState[] getState() {
         return new PlayerBoardState[]{
                 new PlayerBoardState(player1,
@@ -102,19 +122,17 @@ public class Kalah {
             move(byPlayer, startPit);
     }
 
-    private <T> boolean compareLists(List<T> list1, List<T> list2) {
-        if (null == list1 || null == list2 || list1.size() != list2.size())
-            return false;
-        for (int i = 0; i < list1.size(); i++)
-            if (list1.get(i) != list2.get(i))
-                return false;
-        return true;
-    }
-
     private void setTurn(Turn turn) {
         this.turn = turn;
     }
 
+    /**
+     * Turn class handles movements and user turns.
+     * It is a realization of State and Template Pattern.It controls player turns and movements.
+     * <p>
+     * Results of any movement and the Game completion event is emitted using Functional Interface callbacks.
+     * </p>
+     */
     @SuppressWarnings("unchecked")
     private abstract class Turn {
 
@@ -124,6 +142,11 @@ public class Kalah {
             this.player = player;
         }
 
+        /**
+         * This method moves stones from a pit
+         * @param byPlayer The user who ask to move stones
+         * @param startPit The start pit number to move stones
+         */
         void move(String byPlayer, int startPit) {
             if (!isGameFinished() &&
                     byPlayer.equals(turn.getPlayer())) {
@@ -137,7 +160,8 @@ public class Kalah {
                     if (isGameFinished()) {
                         int stonesInPlayer1House = board.get(stateCache.get(player1).getMyHouseIndex());
                         int stonesInPlayer2House = board.get(stateCache.get(player2).getMyHouseIndex());
-                        onGameFinished.accept(stonesInPlayer1House > stonesInPlayer2House ? player1 : player2, Math.max(stonesInPlayer1House, stonesInPlayer2House));
+                        onGameFinished.accept(stonesInPlayer1House > stonesInPlayer2House ? player1 : player2,
+                                Math.max(stonesInPlayer1House, stonesInPlayer2House));
                     }
                 }
             }
@@ -147,6 +171,11 @@ public class Kalah {
             return player;
         }
 
+        /**
+         * This method selects the proper next pit to move stone
+         * @param index The start pit number
+         * @return Returns proper pit index to sow next stone
+         */
         private int getNextIndex(int index) {
             index++;
             if (isOpponentHouse(index))
@@ -154,6 +183,10 @@ public class Kalah {
             return index <= (PITS_NUMBER_PER_PLAYER * 2 + 1) ? index : 0;
         }
 
+        /**
+         * This methods manipulates the game board by sowing stones from a player specified pit.
+         * @param startPit The pit index number which will be used to start sowing from
+         */
         private void sowStones(int startPit) {
             int stones = board.get(startPit);
 
